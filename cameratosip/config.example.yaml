@@ -1,0 +1,16 @@
+ffmpeg: "/opt/bin/ffmpeg"
+
+nvr:
+  user:
+  password:
+  host: 10.0.0.1
+  port: 443
+
+sip:
+  server: sip.antisip.com
+  user:
+  password:
+
+camera:
+  id:
+  channel: 1

@@ -1,0 +1,14 @@
+nvr:
+  user:
+  password:
+  host: 10.0.0.1
+  port: 443
+
+camera:
+  id:
+  channel: 1
+
+hook:
+  url:
+  user:
+  password:

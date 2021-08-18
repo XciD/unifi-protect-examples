@@ -1,0 +1,10 @@
+ffmpeg: "bin/ffmpeg"
+
+nvr:
+  user:
+  password:
+  host: 10.0.0.1
+  port: 443
+
+camera:
+  channel: 1
