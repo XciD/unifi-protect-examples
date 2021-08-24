@@ -9,10 +9,13 @@ WORKDIR /go/src
 FROM base as builder
 COPY . .
 
-RUN CGO_ENABLED=0 go build -o snapshot main.go
+RUN go build -o snapshot main.go
 
 # Release image
-FROM collelog/ffmpeg:4.4-alpine-amd64 as release
+FROM jrottenberg/ffmpeg:4.1-ubuntu as release
+
+WORKDIR /
+
 ENV FFMPEG /usr/local/bin/ffmpeg
 
 ADD config.yaml /

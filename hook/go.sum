@@ -48,6 +48,10 @@ github.com/XciD/unifi-protect v0.0.0-20210818124904-cb64d9392597 h1:EQJ6lK0kwXQN
 github.com/XciD/unifi-protect v0.0.0-20210818124904-cb64d9392597/go.mod h1:dpRGNMIGAYWoQ0PNeinmuNRSg6jiqGhLqT4Q4Q48XEI=
 github.com/XciD/unifi-protect v0.0.0-20210818215309-188a82eb449b h1:e+ZdhcuRB7q5x6xzAsJo7PVtKojulTi132dZATlojSs=
 github.com/XciD/unifi-protect v0.0.0-20210818215309-188a82eb449b/go.mod h1:dpRGNMIGAYWoQ0PNeinmuNRSg6jiqGhLqT4Q4Q48XEI=
+github.com/XciD/unifi-protect v0.0.0-20210823130542-df9b4d64dc72 h1:LMoMkb1JoIDZiRmuqI3GYzQtxMua1S2if8jT5u2rnUM=
+github.com/XciD/unifi-protect v0.0.0-20210823130542-df9b4d64dc72/go.mod h1:dpRGNMIGAYWoQ0PNeinmuNRSg6jiqGhLqT4Q4Q48XEI=
+github.com/XciD/unifi-protect v0.0.0-20210823130943-e92b2a6af7d0 h1:adchgLlBk6Z1SINd5eP9qqCnGiT0XqdzSZrWIGuLRcU=
+github.com/XciD/unifi-protect v0.0.0-20210823130943-e92b2a6af7d0/go.mod h1:dpRGNMIGAYWoQ0PNeinmuNRSg6jiqGhLqT4Q4Q48XEI=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=

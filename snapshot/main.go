@@ -67,10 +67,13 @@ func main() {
 			nvr,
 			&camera,
 			channelToRead,
-			1*time.Minute)
+			10*time.Second)
 	}
 
 	e := echo.New()
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "method=${method}, uri=${uri}, status=${status}\n",
+	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Level: 1,
@@ -98,6 +101,7 @@ type ImageExtractor struct {
 	sync.Mutex
 	timer           *time.Timer
 	running         bool
+	starting        bool
 	nvr             *protect.NVR
 	feed            *protect.LiveFeed
 	lastImg         []byte
@@ -127,6 +131,7 @@ func NewImageExtractor(nvr *protect.NVR, camera *protect.Camera, channel int, du
 func (i *ImageExtractor) close() {
 	i.lastImg = nil
 	i.running = false
+	i.starting = false
 	if i.ffmpegCmd != nil {
 		_ = i.ffmpegCmd.Process.Kill()
 		i.ffmpegCmd = nil
@@ -138,13 +143,6 @@ func (i *ImageExtractor) close() {
 }
 
 func (i *ImageExtractor) start() error {
-	i.running = true
-
-	var err error
-	defer func() {
-		i.running = err == nil
-	}()
-
 	outputTCPServer, err := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP("0.0.0.0"), Port: i.outputPort})
 
 	if err != nil {
@@ -173,6 +171,15 @@ func (i *ImageExtractor) start() error {
 		return err
 	}
 
+	processDone := make(chan struct{})
+	go func() {
+		defer func() {
+			logrus.Infof("Closing wait loop")
+		}()
+		i.ffmpegCmd.Wait()
+		close(processDone)
+	}()
+
 	go feed.PumpData()
 
 	// Wait for the input connection
@@ -192,6 +199,7 @@ func (i *ImageExtractor) start() error {
 
 	go func() {
 		defer func() {
+			logrus.Infof("Closing main loop")
 			i.close()
 			_ = inputConnection.Close()
 		}()
@@ -199,15 +207,18 @@ func (i *ImageExtractor) start() error {
 			select {
 			case <-i.timer.C:
 				return
+			case <-processDone:
+				return
 			case cmd, ok := <-cmdStdErr:
 				if !ok {
 					return
 				}
-				logrus.Infof("CMD: %s", cmd)
+				logrus.Debugf("CMD: %s", cmd)
 			case fragment := <-feed.Events:
 				if len(fragment) == 0 {
 					return
 				}
+				i.running = true
 				if _, err := inputConnection.Write(fragment); err != nil {
 					return
 				}
@@ -252,10 +263,12 @@ func (i *ImageExtractor) start() error {
 func (i *ImageExtractor) GetLastImg() ([]byte, error) {
 	i.timer.Reset(i.duration)
 
-	if !i.running {
+	if !i.running && !i.starting {
+		logrus.Warnf("Starting stream")
+		i.starting = true
 		go func() {
-			i.close()
 			if err := i.start(); err != nil {
+				i.starting = false
 				logrus.Errorf("Error during start %s", err.Error())
 			}
 		}()
