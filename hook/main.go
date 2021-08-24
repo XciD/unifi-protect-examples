@@ -59,9 +59,11 @@ func main() {
 		}
 
 		if update.LastRing != 0 {
+			logrus.Infof("lastRing received %d", update.LastRing)
 			date := time.Unix(int64(update.LastRing), 0)
 
 			if date.Add(1 * time.Minute).After(time.Now()) {
+				logrus.Infof("lastRing seems to be now triggering")
 				SendHook(url, user, password)
 			}
 		}
