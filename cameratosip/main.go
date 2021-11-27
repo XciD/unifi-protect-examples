@@ -87,11 +87,11 @@ func main() {
 	logger.Infof("Listen => %s", listen)
 
 	if err := stack.Listen("udp", listen); err != nil {
-		logger.Panic(err)
+		logger.Fatal(err)
 	}
 
 	if err := stack.Listen("tcp", listen); err != nil {
-		logger.Panic(err)
+		logger.Fatal(err)
 	}
 
 	ua := ua.NewUserAgent(&ua.UserAgentConfig{SipStack: stack})
@@ -147,6 +147,10 @@ func main() {
 	}
 
 	ua.RegisterStateHandler = func(state account.RegisterState) {
+		if state.StatusCode != 200 {
+			logger.Fatal("Register did not return 200")
+		}
+
 		logger.Infof("RegisterStateHandler: user => %s, state => %v, expires => %v",
 			state.Account.AuthInfo.AuthUser, state.StatusCode, state.Expiration)
 	}
@@ -155,7 +159,7 @@ func main() {
 
 	uri, err := parser.ParseUri(sipURI)
 	if err != nil {
-		logger.Error(err)
+		logger.Fatal(err)
 	}
 
 	profile := account.NewProfile(uri.Clone(), "goSIP/example-client",
@@ -164,16 +168,20 @@ func main() {
 			Password: viper.GetString("sip.password"),
 			Realm:    viper.GetString("sip.server"),
 		},
-		300,
+		600,
 		stack,
 	)
 
 	recipient, err := parser.ParseSipUri(sipURI)
 	if err != nil {
-		logger.Error(err)
+		logger.Fatal(err)
 	}
 
-	register, _ := ua.SendRegister(profile, recipient, profile.Expires, nil)
+	register, err := ua.SendRegister(profile, recipient, profile.Expires, nil)
+
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	<-stop
 
@@ -290,8 +298,6 @@ func (p *RTPPiper) Start() error {
 		}
 	})
 
-	scannerChannel := make(chan string)
-
 	randomPortLiveFeed := getRandomPort()
 
 	// Cmd IN will read from Doorbell and forward to the internal server that will push it to the external server
@@ -317,7 +323,8 @@ func (p *RTPPiper) Start() error {
 		return err
 	}
 	scannerIn := bufio.NewScanner(cmdReader)
-	go readScanner(scannerIn, "CMDIN", scannerChannel)
+	scannerInChannel := make(chan string)
+	go readScanner(scannerIn, "CMDIN", scannerInChannel)
 
 	err = ioutil.WriteFile("sdp", []byte(fmt.Sprintf(`v=0
 o=- 0 0 IN IP4 %s
@@ -353,7 +360,8 @@ a=rtpmap:98 speex/16000
 		return err
 	}
 	scannerOut := bufio.NewScanner(cmdReaderOut)
-	go readScanner(scannerOut, "CMDOUT", scannerChannel)
+	scannerOutChannel := make(chan string)
+	go readScanner(scannerOut, "CMDOUT", scannerOutChannel)
 
 	// We send two empty bytes to open the connection
 	p.piper.Send([]byte(""), &p.externalAddress)
@@ -407,7 +415,12 @@ a=rtpmap:98 speex/16000
 	go func() {
 		for {
 			select {
-			case cmd, ok := <-scannerChannel:
+			case cmd, ok := <-scannerOutChannel:
+				if !ok {
+					return
+				}
+				p.logger.Info(cmd)
+			case cmd, ok := <-scannerInChannel:
 				if !ok {
 					return
 				}
